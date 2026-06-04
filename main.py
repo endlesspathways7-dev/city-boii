@@ -1,39 +1,52 @@
-import os
-import re
-import asyncio
-import time
-from datetime import datetime, timedelta
-from collections import defaultdict
-import discord
-from discord.ext import commands
+-- Использование библиотеки discord.js для Node.js
+-- Требуются пакеты: discord.js, @discordjs/builders, @discordjs/rest
 
-TOKEN = os.getenv("DISCORD_TOKEN", "YOUR_BOT_TOKEN_HERE")
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
-VIOLATION_KEYWORDS = {
-    "hate_speech": [r"\b(example)\b"],
-    "spam": [r"(https?://[^\s]+){3,}", r"(\S{25,})"],
-    "harassment": [r"\b(kill yourself|kys|die|worthless)\b"],
-    "nsfw": [r"\b(porn|xxx|nude)\b"],
-}
+let savedMessages = [];
+let pingEnabled = false;
 
-SEVERITY = {"hate_speech": 10, "harassment": 8, "nsfw": 4, "spam": 3}
+// Панель управления
+client.on('messageCreate', async message => {
+    if (message.content === '!panel') {
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder().setCustomId('toggle_ping').setLabel('Toggle Ping').setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId('save_msg').setLabel('Save 10 Msgs').setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId('send_msg').setLabel('Send All').setStyle(ButtonStyle.Danger)
+            );
+        message.channel.send({ content: 'Панель управления:', components: [row] });
+    }
+});
 
-class WebhookManager:
-    @staticmethod
-    async def get_or_create_webhook(channel, name="load-tester"):
-        webhooks = await channel.webhooks()
-        for wh in webhooks:
-            if wh.name == name:
-                return wh
-        return await channel.create_webhook(name=name)
+// Обработка кнопок
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
 
-    @staticmethod
-    async def delete_webhook(webhook):
-        try:
-            await webhook.delete()
-        except:
-            pass
+    if (interaction.customId === 'toggle_ping') {
+        pingEnabled = !pingEnabled;
+        interaction.reply({ content: `Ping: ${pingEnabled}`, ephemeral: true });
+    }
 
+    if (interaction.customId === 'save_msg') {
+        // Логика сохранения последних 10 сообщений
+        const channel = interaction.channel;
+        const messages = await channel.messages.fetch({ limit: 10 });
+        messages.forEach(m => savedMessages.push(m.content));
+        interaction.reply({ content: 'Сохранено 10 сообщений', ephemeral: true });
+    }
+
+    if (interaction.customId === 'send_msg') {
+        // Рассылка сохраненных сообщений
+        const contentToSend = pingEnabled ? '@everyone ' + savedMessages.join('\n') : savedMessages.join('\n');
+        interaction.channel.send(contentToSend);
+        savedMessages = [];
+        interaction.reply({ content: 'Рассылка выполнена', ephemeral: true });
+    }
+});
+
+client.login('MTUxMTg5MDM0Nzk4OTY2MzgwNg.G43SiS.G6dZJWhltdYjCBo36475dq-Hd6LbeLFGmwKJaE');
 class BurstModal(discord.ui.Modal, title="Custom Burst"):
     count_input = discord.ui.TextInput(label="Messages", placeholder="1-5000", default="50")
     delay_input = discord.ui.TextInput(label="Delay (sec)", placeholder="0 = fastest", default="0")
