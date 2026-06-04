@@ -46,7 +46,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-client.login('MTUxMTg5MDM0Nzk4OTY2MzgwNg.G43SiS.G6dZJWhltdYjCBo36475dq-Hd6LbeLFGmwKJaE');
+client.login('DISCORD_TOKEN');
 class BurstModal(discord.ui.Modal, title="Custom Burst"):
     count_input = discord.ui.TextInput(label="Messages", placeholder="1-5000", default="50")
     delay_input = discord.ui.TextInput(label="Delay (sec)", placeholder="0 = fastest", default="0")
